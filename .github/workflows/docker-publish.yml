@@ -44,5 +44,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
+          build-args: |
+            VITE_API_URL=${{ vars.VITE_API_URL || secrets.VITE_API_URL || 'https://api-clinix.softinnova-gt.com' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

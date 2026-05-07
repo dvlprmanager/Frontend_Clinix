@@ -1,6 +1,5 @@
 import { getAccessToken } from '@/utils/auth-storage'
-
-const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3000`
+import { API_URL } from '@/utils/api-client'
 
 function getFilenameFromHeaders(headers, fallback = 'reporte.xlsx') {
   const contentDisposition = headers.get('content-disposition') || ''

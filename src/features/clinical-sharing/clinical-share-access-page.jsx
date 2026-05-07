@@ -9,8 +9,7 @@ import { ErpLoadingEmpty } from '@/components/common/erp-loading-empty'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { getClinicalShareAccessData, verifyClinicalShareAccess } from './clinical-sharing-api'
-
-const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3000`
+import { API_URL } from '@/utils/api-client'
 
 function formatDateTime(value) {
   if (!value) return 'N/A'

@@ -15,6 +15,7 @@ import { DateTimePickerInput } from '@/components/ui/date-time-picker-input'
 import { buildVisiblePageNumbers } from '@/lib/pagination'
 import { useAuth } from '@/features/auth/use-auth'
 import { hasPermission } from '@/utils/permissions'
+import { API_URL } from '@/utils/api-client'
 import { createClinicalShare, getClinicalShareLookups } from '@/features/clinical-sharing/clinical-sharing-api'
 import {
   getClinicalFileLookups,
@@ -31,7 +32,6 @@ import {
 } from '@/features/consultations/consultations-api'
 
 const ATTENTION_PATH_PREFIX = '/consultations/attention/'
-const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3000`
 const ATTENTION_STEPS = ['consulta', 'receta']
 
 function formatDateTime(value) {
