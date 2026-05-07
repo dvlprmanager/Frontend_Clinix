@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 190 100% 99%;
+    --foreground: 206 37% 16%;
+    --card: 0 0% 100%;
+    --card-foreground: 206 37% 16%;
+    --primary: 186 77% 36%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 196 90% 96%;
+    --secondary-foreground: 206 37% 20%;
+    --muted: 202 45% 94%;
+    --muted-foreground: 206 22% 41%;
+    --accent: 213 90% 56%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 350 81% 44%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 203 32% 84%;
+    --input: 203 32% 84%;
+    --ring: 186 77% 36%;
+    --radius: 0.85rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply min-h-screen bg-health-gradient font-sans text-foreground antialiased;
+  }
+}
+
+@layer components {
+  .fc {
+    --fc-today-bg-color: #e6f3fc;
+  }
+
+  .erp-calendar .fc-daygrid-day-frame {
+    min-height: 9rem;
+    max-height: 9rem;
+    overflow: hidden;
+  }
+
+  .erp-calendar .fc-daygrid-day-events {
+    overflow: hidden;
+  }
+
+  .erp-calendar {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .erp-calendar .fc {
+    max-width: 100%;
+  }
+
+  .fc .fc-daygrid-day.fc-day-today,
+  .fc .fc-timegrid-col.fc-day-today,
+  .fc td.fc-day.fc-day-today,
+  .fc th.fc-day.fc-day-today {
+    background-color: #e6f3fc !important;
+  }
+}
