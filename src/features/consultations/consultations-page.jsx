@@ -32,7 +32,6 @@ import {
 } from '@/features/consultations/consultations-api'
 
 const ATTENTION_PATH_PREFIX = '/consultations/attention/'
-const ATTENTION_STEPS = ['consulta', 'receta']
 
 function formatDateTime(value) {
   if (!value) return 'N/A'
@@ -93,7 +92,6 @@ function ConsultationAttentionView({ appointmentId, onBack, openHistoryOnLoad = 
   const [internalDoctorTargetId, setInternalDoctorTargetId] = useState('')
   const [internalReferralNotes, setInternalReferralNotes] = useState('')
   const [internalPassword, setInternalPassword] = useState('')
-  const [activeStep, setActiveStep] = useState('consulta')
   const [uploadFile, setUploadFile] = useState(null)
   const [uploadTitle, setUploadTitle] = useState('')
   const [uploadDescription, setUploadDescription] = useState('')
@@ -116,7 +114,6 @@ function ConsultationAttentionView({ appointmentId, onBack, openHistoryOnLoad = 
     register,
     handleSubmit,
     reset,
-    trigger,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -208,7 +205,6 @@ function ConsultationAttentionView({ appointmentId, onBack, openHistoryOnLoad = 
           }))
         : [{ medicamento: '', dosis: '', frecuencia: '', duracion: '', notas: '' }],
     })
-    setActiveStep('consulta')
     setUploadExamDate(formatDateOnly(new Date()))
     setFilesSearchInput('')
     setFilesSearch('')
@@ -311,21 +307,6 @@ function ConsultationAttentionView({ appointmentId, onBack, openHistoryOnLoad = 
     } catch (error) {
       toast.error(error.message || 'No se pudo guardar la consulta')
     }
-  }
-
-  const handleNextStep = async () => {
-    if (activeStep === 'consulta') {
-      const valid = await trigger(['diagnostico', 'plan', 'followup_suggested_at'])
-      if (!valid) return
-    }
-
-    const nextIndex = Math.min(ATTENTION_STEPS.length - 1, ATTENTION_STEPS.indexOf(activeStep) + 1)
-    setActiveStep(ATTENTION_STEPS[nextIndex])
-  }
-
-  const handlePrevStep = () => {
-    const previousIndex = Math.max(0, ATTENTION_STEPS.indexOf(activeStep) - 1)
-    setActiveStep(ATTENTION_STEPS[previousIndex])
   }
 
   const handleUploadExam = async (event) => {
@@ -459,6 +440,27 @@ function ConsultationAttentionView({ appointmentId, onBack, openHistoryOnLoad = 
   const canSubmitInternalReferral = Boolean(
     selectedAppointment?.patient_id && internalDoctorTargetId && internalPassword && !internalShareMutation.isPending,
   )
+  const patientInfoColumns = [
+    [
+      { label: 'Paciente', value: `${selectedAppointment?.patient_nombres || ''} ${selectedAppointment?.patient_apellidos || ''}`.trim() || 'N/A' },
+      { label: 'DPI', value: selectedAppointment?.patient_dpi || 'N/A' },
+      { label: 'Nacimiento', value: formatDateOnly(selectedAppointment?.patient_fecha_nacimiento) || 'N/A' },
+      { label: 'Sexo', value: selectedAppointment?.patient_sexo || 'N/A' },
+      { label: 'Teléfono', value: selectedAppointment?.patient_telefono || 'N/A' },
+      { label: 'Correo', value: selectedAppointment?.patient_email || 'N/A' },
+    ],
+    [
+      { label: 'Doctor', value: `${selectedAppointment?.doctor_nombres || ''} ${selectedAppointment?.doctor_apellidos || ''}`.trim() || selectedAppointment?.doctor_username || 'N/A' },
+      { label: 'Fecha cita', value: formatDateTime(selectedAppointment?.start_at) || 'N/A' },
+      { label: 'Estado cita', value: selectedAppointment?.appointment_status_name || selectedAppointment?.appointment_status_code || 'N/A' },
+      { label: 'Motivo cita', value: selectedAppointment?.appointment_motivo || 'N/A' },
+      { label: 'Dirección', value: selectedAppointment?.patient_direccion || 'N/A' },
+      { label: 'Alergias / alertas', value: [selectedAppointment?.patient_alergias, selectedAppointment?.patient_notas_alerta].filter(Boolean).join(' | ') || 'N/A' },
+      { label: 'Crónicos', value: selectedAppointment?.patient_cronicos || 'N/A' },
+      { label: 'Medicamentos actuales', value: selectedAppointment?.patient_medicamentos_actuales || 'N/A' },
+    ],
+  ]
+  const patientHistoryItems = historyQuery.data?.data || []
 
   useEffect(() => {
     if (!openHistoryOnLoad) return
@@ -488,30 +490,8 @@ function ConsultationAttentionView({ appointmentId, onBack, openHistoryOnLoad = 
   return (
     <div className="grid gap-4">
       <Card>
-        <CardHeader>
-          <CardTitle>Información del paciente</CardTitle>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <div className="grid min-w-[1200px] gap-3 text-sm xl:grid-cols-8">
-            <div><span className="font-semibold">Doctor:</span> {`${selectedAppointment.doctor_nombres || ''} ${selectedAppointment.doctor_apellidos || ''}`.trim() || selectedAppointment.doctor_username}</div>
-            <div><span className="font-semibold">Paciente:</span> {`${selectedAppointment.patient_nombres || ''} ${selectedAppointment.patient_apellidos || ''}`.trim()}</div>
-            <div><span className="font-semibold">DPI:</span> {selectedAppointment?.patient_dpi || 'N/A'}</div>
-            <div><span className="font-semibold">Nacimiento:</span> {formatDateOnly(selectedAppointment?.patient_fecha_nacimiento) || 'N/A'}</div>
-            <div><span className="font-semibold">Sexo:</span> {selectedAppointment?.patient_sexo || 'N/A'}</div>
-            <div><span className="font-semibold">Teléfono:</span> {selectedAppointment?.patient_telefono || 'N/A'}</div>
-            <div><span className="font-semibold">Email:</span> {selectedAppointment?.patient_email || 'N/A'}</div>
-            <div><span className="font-semibold">Dirección:</span> {selectedAppointment?.patient_direccion || 'N/A'}</div>
-            <div><span className="font-semibold">Alergias:</span> {selectedAppointment?.patient_alergias || 'N/A'}</div>
-            <div><span className="font-semibold">Crónicos:</span> {selectedAppointment?.patient_cronicos || 'N/A'}</div>
-            <div><span className="font-semibold">Medicamentos:</span> {selectedAppointment?.patient_medicamentos_actuales || 'N/A'}</div>
-            <div><span className="font-semibold">Notas alerta:</span> {selectedAppointment?.patient_notas_alerta || 'N/A'}</div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2">
-          <CardTitle>Atención de consulta</CardTitle>
+          <CardTitle>Detalle de consulta</CardTitle>
           <div className="flex items-center gap-2">
             {canCreateInternalReferral ? (
               <Button
@@ -542,19 +522,68 @@ function ConsultationAttentionView({ appointmentId, onBack, openHistoryOnLoad = 
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
-          <form className="space-y-4">
-            <div className="grid gap-2 sm:grid-cols-2">
-              <div className={`rounded-md border px-3 py-2 text-center text-sm ${activeStep === 'consulta' ? 'bg-primary text-primary-foreground' : 'bg-muted/40 text-muted-foreground'}`}>
-                Paso 1: Consulta
+        <CardContent className="space-y-6">
+          <section className="grid gap-4 xl:grid-cols-3">
+            {patientInfoColumns.map((column, columnIndex) => (
+              <div key={`patient-column-${columnIndex}`} className="space-y-3 rounded-lg border p-4">
+                {column.map((item) => (
+                  <div key={item.label} className="space-y-1 border-b pb-3 last:border-b-0 last:pb-0">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{item.label}</p>
+                    <p className="text-sm text-foreground">{item.value}</p>
+                  </div>
+                ))}
               </div>
-              <div className={`rounded-md border px-3 py-2 text-center text-sm ${activeStep === 'receta' ? 'bg-primary text-primary-foreground' : 'bg-muted/40 text-muted-foreground'}`}>
-                Paso 2: Receta
+            ))}
+
+            <div className="space-y-3 rounded-lg border p-4">
+              <div className="border-b pb-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Historial</p>
+                <p className="text-sm font-semibold text-foreground">Historial médico</p>
+                <p className="text-xs text-muted-foreground">Consultas previas del paciente</p>
+              </div>
+
+              <div className="max-h-[360px] space-y-3 overflow-y-auto pr-1">
+                {historyQuery.isLoading ? (
+                  <ErpLoadingEmpty title="Cargando historial clínico" />
+                ) : patientHistoryItems.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No hay consultas registradas para este paciente.</p>
+                ) : (
+                  patientHistoryItems.map((item) => (
+                    <div key={item.id} className="rounded-xl border border-sky-200 px-4 py-3 text-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 space-y-1">
+                          <p className="font-semibold text-foreground">{item.motivo || 'Sin motivo'}</p>
+                          <p className="text-muted-foreground">{item.historia || 'Sin historia clínica'}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Doctor: {`${item.doctor_nombres || ''} ${item.doctor_apellidos || ''}`.trim() || 'N/A'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Fecha: {formatDateTime(item.created_at)}</p>
+                        </div>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="outline"
+                          className="h-9 w-9 shrink-0 rounded-full border-sky-500 text-sky-600 hover:bg-sky-50 hover:text-sky-700"
+                          title="Ver detalle de historial"
+                          aria-label="Ver detalle de historial"
+                          onClick={() => setHistoryDetail(item)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
+          </section>
 
-            {activeStep === 'consulta' ? (
-              <div className="grid gap-4 rounded-md border p-4 md:grid-cols-2">
+          <form className="space-y-4">
+            <section className="space-y-4 rounded-lg border p-4">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Consulta clínica</p>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
                 <div className="grid gap-2">
                   <Label>Motivo</Label>
                   <Input {...register('motivo')} />
@@ -599,10 +628,12 @@ function ConsultationAttentionView({ appointmentId, onBack, openHistoryOnLoad = 
                   {errors.followup_suggested_at ? <p className="text-xs font-medium text-destructive">{errors.followup_suggested_at.message}</p> : null}
                 </div>
               </div>
-            ) : null}
+            </section>
 
-            {activeStep === 'receta' ? (
-              <div className="space-y-4 rounded-md border p-4">
+            <section className="space-y-4 rounded-lg border p-4">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Receta médica</p>
+              </div>
                 {prescriptionFields.map((field, index) => (
                   <div key={field.id} className="rounded-md border p-3">
                     <div className="mb-3 flex items-center justify-between">
@@ -637,282 +668,33 @@ function ConsultationAttentionView({ appointmentId, onBack, openHistoryOnLoad = 
                     </div>
                   </div>
                 ))}
-                    <div className="flex">
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="outline"
-                        className="h-9 w-9"
-                        title="Agregar medicamento"
-                        aria-label="Agregar medicamento"
-                        onClick={() => append({ medicamento: '', dosis: '', frecuencia: '', duracion: '', notas: '' })}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-              </div>
-            ) : null}
-
-            {activeStep === 'examenes' ? (
-              <div className="space-y-4 rounded-md border p-4">
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div className="grid gap-2">
-                    <Label>Archivo de examen (PDF)</Label>
-                    <Input
-                      type="file"
-                      accept=".pdf,application/pdf"
-                      onChange={(event) => setUploadFile(event.target.files?.[0] || null)}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Título</Label>
-                    <Input value={uploadTitle} onChange={(event) => setUploadTitle(event.target.value)} />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Tipo de archivo</Label>
-                    <SelectField
-                      className="text-sm"
-                      value={uploadFileTypeId}
-                      onValueChange={setUploadFileTypeId}
-                      options={[
-                        { value: '', label: 'Seleccionar tipo' },
-                        ...fileTypes.map((item) => ({ value: item.id, label: item.name })),
-                      ]}
-                      placeholder="Seleccionar tipo"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Proveedor</Label>
-                    <SelectField
-                      className="text-sm"
-                      value={uploadStorageProviderId}
-                      onValueChange={setUploadStorageProviderId}
-                      options={[
-                        { value: '', label: 'Seleccionar proveedor' },
-                        ...storageProviders.map((item) => ({ value: item.id, label: item.name })),
-                      ]}
-                      placeholder="Seleccionar proveedor"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Fecha del examen</Label>
-                    <DateTimePickerInput id="upload_exam_date" value={uploadExamDate} onChange={setUploadExamDate} withTime={false} />
-                  </div>
-                  <div className="grid gap-2 md:col-span-2">
-                    <Label>Descripción</Label>
-                    <Input value={uploadDescription} onChange={(event) => setUploadDescription(event.target.value)} />
-                  </div>
-                </div>
-                <div className="flex justify-end">
+                <div className="flex">
                   <Button
                     type="button"
                     size="icon"
+                    variant="outline"
                     className="h-9 w-9"
-                    title={uploadFileMutation.isPending ? 'Subiendo examen' : 'Subir examen'}
-                    aria-label={uploadFileMutation.isPending ? 'Subiendo examen' : 'Subir examen'}
-                    onClick={handleUploadExam}
-                    disabled={uploadFileMutation.isPending}
+                    title="Agregar medicamento"
+                    aria-label="Agregar medicamento"
+                    onClick={() => append({ medicamento: '', dosis: '', frecuencia: '', duracion: '', notas: '' })}
                   >
-                    <Upload className="h-4 w-4" />
+                    <Plus className="h-4 w-4" />
                   </Button>
                 </div>
-                <div className="space-y-2">
-                  <div className="grid gap-2 md:grid-cols-3">
-                    <Input
-                      value={filesSearchInput}
-                      onChange={(event) => setFilesSearchInput(event.target.value)}
-                      placeholder="Buscar por título o descripción"
-                    />
-                    <SelectField
-                      className="text-sm"
-                      value={filesTypeFilter}
-                      onValueChange={(value) => {
-                        setFilesPage(1)
-                        setFilesTypeFilter(value)
-                      }}
-                      options={[
-                        { value: '', label: 'Todos los tipos' },
-                        ...fileTypes.map((item) => ({ value: item.id, label: item.name })),
-                      ]}
-                      placeholder="Todos los tipos"
-                    />
-                    <SelectField
-                      className="text-sm"
-                      value={filesStatusFilter}
-                      onValueChange={(value) => {
-                        setFilesPage(1)
-                        setFilesStatusFilter(value)
-                      }}
-                      options={[
-                        { value: '1', label: 'Solo activos' },
-                        { value: '0', label: 'Solo inactivos' },
-                        { value: 'all', label: 'Todos' },
-                      ]}
-                      placeholder="Estado"
-                      searchable={false}
-                    />
-                  </div>
-                  <p className="text-sm font-semibold text-foreground">Exámenes cargados</p>
-                  {filesQuery.isLoading ? (
-                    <ErpLoadingEmpty title="Cargando archivos clínicos" />
-                  ) : clinicalFiles.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No hay exámenes o archivos clínicos registrados.</p>
-                  ) : (
-                    clinicalFiles.map((file) => (
-                      <div
-                        key={file.id}
-                        className={`w-full rounded-md border p-3 text-left transition-colors ${
-                          Number(file.estatus) === 1 ? 'hover:bg-muted/30' : 'border-dashed opacity-70'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <p className="font-semibold text-foreground">{file.title || file.file_type_name || 'Archivo clínico'}</p>
-                            <p className="text-xs text-muted-foreground">{file.file_type_name || 'Tipo no definido'}</p>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Button
-                              type="button"
-                              size="icon"
-                              variant="outline"
-                              className="h-8 w-8"
-                              title="Previsualizar PDF"
-                              aria-label="Previsualizar PDF"
-                              onClick={() => handlePreviewFile(file)}
-                              disabled={Number(file.estatus) !== 1}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              type="button"
-                              size="icon"
-                              variant="outline"
-                              className="h-8 w-8"
-                              title="Descargar archivo"
-                              aria-label="Descargar archivo"
-                              onClick={() => handleDownloadFile(file)}
-                              disabled={Number(file.estatus) !== 1}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              type="button"
-                              size="icon"
-                              variant="outline"
-                              className="h-8 w-8"
-                              title="Editar metadatos"
-                              aria-label="Editar metadatos"
-                              onClick={() => openEditFileModal(file)}
-                            >
-                              <FilePenLine className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              type="button"
-                              size="icon"
-                              variant={Number(file.estatus) === 1 ? 'destructive' : 'default'}
-                              className="h-8 w-8"
-                              title={Number(file.estatus) === 1 ? 'Inactivar archivo' : 'Activar archivo'}
-                              aria-label={Number(file.estatus) === 1 ? 'Inactivar archivo' : 'Activar archivo'}
-                              onClick={() => handleChangeFileStatus(file, Number(file.estatus) === 1 ? 0 : 1)}
-                            >
-                              {Number(file.estatus) === 1 ? (
-                                <ToggleRight className="h-4 w-4" />
-                              ) : (
-                                <ToggleLeft className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </div>
-                        </div>
-                        <p className="mt-1 text-xs text-muted-foreground">{file.description || 'Sin descripción'}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Fecha examen: {formatDateOnly(file.exam_date) || 'N/A'} | Cargado: {formatDateTime(file.created_at)}
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Tamaño: {formatFileSize(file.size_bytes)} | Estado: {Number(file.estatus) === 1 ? 'Activo' : 'Inactivo'}
-                        </p>
-                      </div>
-                    ))
-                  )}
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-3">
-                    <p className="text-xs text-muted-foreground">
-                      Página {filesMeta?.page || 1} de {filesMeta?.totalPages || 1} | Total: {filesMeta?.total || 0}
-                    </p>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="outline"
-                        className="h-8 w-8"
-                        title="Página anterior"
-                        aria-label="Página anterior"
-                        disabled={filesCurrentPage <= 1}
-                        onClick={() => setFilesPage(Math.max(1, filesCurrentPage - 1))}
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                      <div className="flex items-center gap-1">
-                        {filesPageNumbers.map((pageNumber) => (
-                          <Button
-                            key={pageNumber}
-                            type="button"
-                            variant={pageNumber === filesCurrentPage ? 'default' : 'outline'}
-                            className="h-8 min-w-8 px-2"
-                            onClick={() => setFilesPage(pageNumber)}
-                            aria-label={`Ir a página ${pageNumber}`}
-                            title={`Página ${pageNumber}`}
-                          >
-                            {pageNumber}
-                          </Button>
-                        ))}
-                      </div>
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="outline"
-                        className="h-8 w-8"
-                        title="Página siguiente"
-                        aria-label="Página siguiente"
-                        disabled={filesCurrentPage >= filesTotalPages}
-                        onClick={() => setFilesPage(Math.min(filesTotalPages, filesCurrentPage + 1))}
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : null}
+            </section>
 
-            <div className="flex justify-between">
+            <div className="flex justify-end">
               <Button
                 type="button"
                 size="icon"
-                variant="outline"
                 className="h-9 w-9"
-                title="Paso anterior"
-                aria-label="Paso anterior"
-                onClick={handlePrevStep}
-                disabled={ATTENTION_STEPS.indexOf(activeStep) === 0}
+                title={saveMutation.isPending ? 'Guardando consulta y receta' : 'Guardar consulta y receta'}
+                aria-label={saveMutation.isPending ? 'Guardando consulta y receta' : 'Guardar consulta y receta'}
+                disabled={saveMutation.isPending}
+                onClick={handleSubmit(handleSaveConsultation)}
               >
-                <ChevronLeft className="h-4 w-4" />
+                <Save className="h-4 w-4" />
               </Button>
-              {activeStep !== 'receta' ? (
-                <Button type="button" size="icon" className="h-9 w-9" title="Siguiente paso" aria-label="Siguiente paso" onClick={handleNextStep}>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  size="icon"
-                  className="h-9 w-9"
-                  title={saveMutation.isPending ? 'Guardando consulta y receta' : 'Guardar consulta y receta'}
-                  aria-label={saveMutation.isPending ? 'Guardando consulta y receta' : 'Guardar consulta y receta'}
-                  disabled={saveMutation.isPending}
-                  onClick={handleSubmit(handleSaveConsultation)}
-                >
-                  <Save className="h-4 w-4" />
-                </Button>
-              )}
             </div>
           </form>
         </CardContent>
@@ -1217,13 +999,7 @@ export function ConsultationsPage() {
 
   if (isAttentionMode) {
     return (
-      <div className="grid gap-4">
-        <div>
-          <h2 className="text-xl font-semibold text-foreground">Atención de consulta</h2>
-          <p className="text-sm text-muted-foreground">Consulta clínica, receta y exámenes en un solo flujo</p>
-        </div>
-        <ConsultationAttentionView appointmentId={appointmentId} onBack={() => navigate('/consultations')} openHistoryOnLoad={openHistoryFromQuery} />
-      </div>
+      <ConsultationAttentionView appointmentId={appointmentId} onBack={() => navigate('/consultations')} openHistoryOnLoad={openHistoryFromQuery} />
     )
   }
 

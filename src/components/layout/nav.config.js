@@ -38,7 +38,6 @@ export const navSections = [
       { id: 'internal-referrals', path: '/clinical-sharing/internal-referrals', label: 'Pacientes Remitidos', icon: CalendarCheck2, requiredPermission: 'CLINICAL_SHARE_READ' },
       { id: 'consultations', path: '/consultations', label: 'Consultas', icon: FileText, requiredPermission: 'PATIENTS_READ', requiredRoles: ['ADMIN', 'DOCTOR'] },
       { id: 'clinical-sharing', path: '/clinical-sharing', label: 'Interconsultas', icon: Share2, requiredPermission: 'CLINICAL_SHARE_READ' },
-      { id: 'specialties', path: '/admin/specialties', label: 'Especialidades', icon: Stethoscope, requiredPermission: 'ACCESS_MANAGE' },
     ],
   },
   {
@@ -57,6 +56,7 @@ export const navSections = [
     label: 'Plataforma',
     icon: Settings2,
     items: [
+      { id: 'specialties', path: '/admin/specialties', label: 'Especialidades', icon: Stethoscope, requiredPermission: 'ACCESS_MANAGE' },
       { id: 'file-types', path: '/admin/file-types', label: 'Tipos de Archivo', icon: FileArchive, requiredPermission: 'ACCESS_MANAGE' },
       { id: 'storage-providers', path: '/admin/storage-providers', label: 'Storage Providers', icon: Hospital, requiredPermission: 'ACCESS_MANAGE' },
       { id: 'invoice-status', path: '/admin/invoice-status', label: 'Estados Factura', icon: ReceiptText, requiredPermission: 'ACCESS_MANAGE' },

@@ -92,6 +92,15 @@ function formatCurrency(value) {
   }).format(amount)
 }
 
+function SummaryMetricCard({ label, value }) {
+  return (
+    <div className="rounded-md border p-3">
+      <p className="text-[11px] leading-4 text-muted-foreground sm:text-xs">{label}</p>
+      <p className="text-sm font-semibold leading-5">{value}</p>
+    </div>
+  )
+}
+
 export function CashRegisterPage() {
   const { session } = useAuth()
   const queryClient = useQueryClient()
@@ -271,6 +280,18 @@ export function CashRegisterPage() {
       difference,
     }
   }, [parsedViewingCut])
+  const summaryCards = [
+    { label: 'Estado actual', value: currentData.isOpen ? 'Caja abierta' : 'Caja cerrada' },
+    { label: 'Apertura', value: formatCurrency(currentSession?.totals?.openingAmount || 0) },
+    { label: 'Ingresos efectivo', value: formatCurrency(currentSession?.totals?.cashIn || 0) },
+    { label: 'Pagos tarjeta', value: formatCurrency(currentSession?.paymentBreakdown?.card || 0) },
+    { label: 'Pagos transferencia', value: formatCurrency(currentSession?.paymentBreakdown?.transfer || 0) },
+    { label: 'Pagos otros', value: formatCurrency(currentSession?.paymentBreakdown?.other || 0) },
+    { label: 'Total transacciones', value: formatCurrency(currentSession?.paymentBreakdown?.total || 0) },
+    { label: 'Esperado', value: formatCurrency(currentSession?.totals?.expectedCash || 0) },
+    { label: 'Cuadres cerrados', value: summary.closedSessions || 0 },
+    { label: 'Diferencia acumulada', value: formatCurrency(summary.difference || 0) },
+  ]
 
   const onOpenSubmit = async (values) => {
     try {
@@ -332,7 +353,7 @@ export function CashRegisterPage() {
           <CardTitle>Caja</CardTitle>
           <p className="text-sm text-muted-foreground">Apertura, cierre y cuadre de efectivo</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
             size="icon"
@@ -374,50 +395,22 @@ export function CashRegisterPage() {
         </div>
       </CardHeader>
 
-      <CardContent className="min-h-0 flex-1 p-0">
-        <div className="grid gap-3 border-b p-3 md:grid-cols-8">
-          <div className="rounded-md border p-3">
-            <p className="text-xs text-muted-foreground">Estado actual</p>
-            <p className="text-sm font-semibold">{currentData.isOpen ? 'Caja abierta' : 'Caja cerrada'}</p>
+      <CardContent className="min-h-0 flex-1 space-y-4 p-3">
+        <section className="overflow-hidden rounded-xl border bg-background">
+          <div className="border-b px-4 py-3">
+            <p className="text-sm font-semibold text-foreground">Resumen actual</p>
           </div>
-          <div className="rounded-md border p-3">
-            <p className="text-xs text-muted-foreground">Apertura</p>
-            <p className="text-sm font-semibold">{formatCurrency(currentSession?.totals?.openingAmount || 0)}</p>
+          <div className="grid grid-cols-2 gap-3 p-3 xl:grid-cols-5">
+            {summaryCards.map((item) => (
+              <SummaryMetricCard key={item.label} label={item.label} value={item.value} />
+            ))}
           </div>
-          <div className="rounded-md border p-3">
-            <p className="text-xs text-muted-foreground">Ingresos efectivo</p>
-            <p className="text-sm font-semibold">{formatCurrency(currentSession?.totals?.cashIn || 0)}</p>
-          </div>
-          <div className="rounded-md border p-3">
-            <p className="text-xs text-muted-foreground">Pagos tarjeta</p>
-            <p className="text-sm font-semibold">{formatCurrency(currentSession?.paymentBreakdown?.card || 0)}</p>
-          </div>
-          <div className="rounded-md border p-3">
-            <p className="text-xs text-muted-foreground">Pagos transferencia</p>
-            <p className="text-sm font-semibold">{formatCurrency(currentSession?.paymentBreakdown?.transfer || 0)}</p>
-          </div>
-          <div className="rounded-md border p-3">
-            <p className="text-xs text-muted-foreground">Pagos otros</p>
-            <p className="text-sm font-semibold">{formatCurrency(currentSession?.paymentBreakdown?.other || 0)}</p>
-          </div>
-          <div className="rounded-md border p-3">
-            <p className="text-xs text-muted-foreground">Total transacciones</p>
-            <p className="text-sm font-semibold">{formatCurrency(currentSession?.paymentBreakdown?.total || 0)}</p>
-          </div>
-          <div className="rounded-md border p-3">
-            <p className="text-xs text-muted-foreground">Esperado</p>
-            <p className="text-sm font-semibold">{formatCurrency(currentSession?.totals?.expectedCash || 0)}</p>
-          </div>
-          <div className="rounded-md border p-3">
-            <p className="text-xs text-muted-foreground">Cuadres cerrados</p>
-            <p className="text-sm font-semibold">{summary.closedSessions || 0}</p>
-          </div>
-          <div className="rounded-md border p-3">
-            <p className="text-xs text-muted-foreground">Diferencia acumulada</p>
-            <p className="text-sm font-semibold">{formatCurrency(summary.difference || 0)}</p>
-          </div>
-        </div>
+        </section>
 
+        <section className="overflow-hidden rounded-xl border bg-background">
+          <div className="border-b px-4 py-3">
+            <p className="text-sm font-semibold text-foreground">Sesiones de caja</p>
+          </div>
         <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[1400px] border-collapse text-sm">
               <thead className="bg-muted/60 text-left">
@@ -463,11 +456,49 @@ export function CashRegisterPage() {
           </table>
         </div>
 
-        <div className="flex items-center justify-between border-t px-4 py-3 text-sm">
+        <div className="space-y-3 p-3 md:hidden">
+          {sessionsQuery.isLoading ? (
+            <div className="rounded-lg border">
+              <ErpTableLoadingRow colSpan={1} title="Cargando sesiones de caja" />
+            </div>
+          ) : rows.length === 0 ? (
+            <div className="rounded-lg border px-4 py-6 text-sm text-muted-foreground">No hay sesiones de caja</div>
+          ) : (
+            rows.map((row) => (
+              <div key={row.id} className="rounded-lg border p-4 text-sm">
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-foreground">{formatDateTime(row.opened_at)}</p>
+                    <p className="text-xs text-muted-foreground">{row.opened_by_username || 'N/A'}</p>
+                  </div>
+                  <span className="rounded-md border px-2 py-1 text-xs">{row.status}</span>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <div><span className="text-muted-foreground">Apertura efectivo:</span> {formatCurrency(row.totals?.openingAmount || 0)}</div>
+                  <div><span className="text-muted-foreground">Pagos efectivo:</span> {formatCurrency(row.paymentBreakdown?.cash || 0)}</div>
+                  <div><span className="text-muted-foreground">Tarjeta:</span> {formatCurrency(row.paymentBreakdown?.card || 0)}</div>
+                  <div><span className="text-muted-foreground">Transferencia:</span> {formatCurrency(row.paymentBreakdown?.transfer || 0)}</div>
+                  <div><span className="text-muted-foreground">Otros:</span> {formatCurrency(row.paymentBreakdown?.other || 0)}</div>
+                  <div><span className="text-muted-foreground">Total transacciones:</span> {formatCurrency(row.paymentBreakdown?.total || 0)}</div>
+                  <div><span className="text-muted-foreground">Esperado:</span> {formatCurrency(row.totals?.expectedCash || 0)}</div>
+                  <div><span className="text-muted-foreground">Cierre real:</span> {formatCurrency(row.totals?.closingAmount || 0)}</div>
+                  <div className="sm:col-span-2">
+                    <span className="text-muted-foreground">Diferencia:</span>{' '}
+                    <span className={Number(row.totals?.difference || 0) > 0 ? 'text-emerald-600 font-semibold' : Number(row.totals?.difference || 0) < 0 ? 'text-red-600 font-semibold' : 'font-semibold'}>
+                      {formatCurrency(row.totals?.difference || 0)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="flex flex-col gap-3 border-t px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
           <p className="text-muted-foreground">
             Página {meta?.page || 1} de {meta?.totalPages || 1} | Total: {meta?.total || 0}
           </p>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               type="button"
               variant="outline"
@@ -478,7 +509,7 @@ export function CashRegisterPage() {
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <div className="flex items-center gap-1">
+            <div className="flex flex-1 flex-wrap items-center gap-1 sm:flex-initial">
               {pageNumbers.map((pageNumber) => (
                 <Button
                   key={pageNumber}
@@ -503,9 +534,10 @@ export function CashRegisterPage() {
             </Button>
           </div>
         </div>
+        </section>
 
-        <div className="border-t">
-          <div className="px-4 py-3">
+        <section className="overflow-hidden rounded-xl border bg-background">
+          <div className="border-b px-4 py-3">
             <p className="text-sm font-semibold text-foreground">Cortes de caja (sesión actual)</p>
           </div>
           <div className="hidden overflow-x-auto md:block">
@@ -566,11 +598,56 @@ export function CashRegisterPage() {
               </tbody>
             </table>
           </div>
-          <div className="flex items-center justify-between border-t px-4 py-3 text-sm">
+
+          <div className="space-y-3 p-3 md:hidden">
+            {cutsQuery.isLoading ? (
+              <div className="rounded-lg border">
+                <ErpTableLoadingRow colSpan={1} title="Cargando cortes de caja" />
+              </div>
+            ) : cutsRows.length === 0 ? (
+              <div className="rounded-lg border px-4 py-6 text-sm text-muted-foreground">No hay cortes registrados</div>
+            ) : (
+              cutsRows.map((row) => (
+                <div key={row.id} className="rounded-lg border p-4 text-sm">
+                  <div className="mb-3 flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-foreground">Corte #{row.cut_no}</p>
+                      <p className="text-xs text-muted-foreground">{formatDateTime(row.cut_at)}</p>
+                    </div>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      className="h-9 w-9 shrink-0"
+                      title="Ver corte"
+                      aria-label="Ver corte"
+                      onClick={() => setViewingCut(row)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <div><span className="text-muted-foreground">Usuario:</span> {row.performed_by_username || 'N/A'}</div>
+                    <div><span className="text-muted-foreground">Esperado:</span> {formatCurrency(row.expected_cash_total)}</div>
+                    <div><span className="text-muted-foreground">Contado:</span> {formatCurrency(row.counted_cash_total)}</div>
+                    <div>
+                      <span className="text-muted-foreground">Diferencia:</span>{' '}
+                      <span className={Number(row.cut_difference || 0) > 0 ? 'text-emerald-600 font-semibold' : Number(row.cut_difference || 0) < 0 ? 'text-red-600 font-semibold' : 'font-semibold'}>
+                        {formatCurrency(row.cut_difference)}
+                      </span>
+                    </div>
+                    <div className="sm:col-span-2"><span className="text-muted-foreground">Notas:</span> {row.notes || '-'}</div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="flex flex-col gap-3 border-t px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
             <p className="text-muted-foreground">
               Página {cutsMeta?.page || 1} de {cutsMeta?.totalPages || 1} | Total: {cutsMeta?.total || 0}
             </p>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
                 variant="outline"
@@ -581,7 +658,7 @@ export function CashRegisterPage() {
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <div className="flex items-center gap-1">
+              <div className="flex flex-1 flex-wrap items-center gap-1 sm:flex-initial">
                 {cutPageNumbers.map((pageNumber) => (
                   <Button
                     key={pageNumber}
@@ -606,7 +683,7 @@ export function CashRegisterPage() {
               </Button>
             </div>
           </div>
-        </div>
+        </section>
       </CardContent>
 
       <Dialog
@@ -616,7 +693,7 @@ export function CashRegisterPage() {
           if (!open) openForm.reset(getOpenFormDefaults())
         }}
       >
-        <DialogContent className="max-w-lg">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-lg">
           <DialogHeader>
             <DialogTitle>Apertura de caja</DialogTitle>
             <DialogDescription>Confirma usuario y contraseña para abrir caja.</DialogDescription>
@@ -658,7 +735,7 @@ export function CashRegisterPage() {
           if (!open) closeForm.reset(DEFAULT_CLOSE_FORM_VALUES)
         }}
       >
-        <DialogContent className="max-w-5xl">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-5xl">
           <DialogHeader>
             <DialogTitle>Cierre de caja</DialogTitle>
             <DialogDescription>Ingresa el cierre con denominaciones y canales de pago.</DialogDescription>
@@ -800,7 +877,7 @@ export function CashRegisterPage() {
           if (!open) cutForm.reset(DEFAULT_CUT_FORM_VALUES)
         }}
       >
-        <DialogContent className="max-w-5xl">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-5xl">
           <DialogHeader>
             <DialogTitle>Generar corte de caja</DialogTitle>
             <DialogDescription>Crea un corte con el saldo esperado actual de la sesión abierta.</DialogDescription>
@@ -936,7 +1013,7 @@ export function CashRegisterPage() {
       </Dialog>
 
       <Dialog open={Boolean(parsedViewingCut)} onOpenChange={(open) => !open && setViewingCut(null)}>
-        <DialogContent className="max-w-5xl">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-5xl">
           <DialogHeader>
             <DialogTitle>Detalle corte #{parsedViewingCut?.cut_no || ''}</DialogTitle>
             <DialogDescription>Información del cuadre en modo solo lectura.</DialogDescription>

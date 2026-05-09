@@ -32,6 +32,7 @@ export function InternalReferralsPage() {
       listClinicalShares({
         direction: 'received',
         internal: true,
+        all: true,
         page: 1,
         pageSize: 50,
         q: search,

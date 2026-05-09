@@ -45,6 +45,16 @@ function statusBadgeClass(status) {
   return 'border-slate-200 bg-slate-100 text-slate-700'
 }
 
+function statusLabel(status) {
+  const normalized = String(status || '').toUpperCase()
+  if (normalized === 'ACTIVE') return 'ACTIVA'
+  if (normalized === 'PENDING_DELIVERY') return 'PENDIENTE ENTREGA'
+  if (normalized === 'REVOKED') return 'REVOCADA'
+  if (normalized === 'BLOCKED') return 'BLOQUEADA'
+  if (normalized === 'EXPIRED') return 'EXPIRADA'
+  return normalized || 'N/A'
+}
+
 function directionLabel(direction) {
   return direction === 'received' ? 'Recibidos' : 'Enviados'
 }
@@ -96,7 +106,10 @@ export function ClinicalSharingPage() {
     onSuccess: async (response) => {
       await queryClient.invalidateQueries({ queryKey: ['clinical-sharing'], exact: false })
       const sent = Boolean(response?.data?.mail?.sent)
-      if (sent) {
+      const mailReason = response?.data?.mail?.reason || ''
+      if (mailReason === 'internal_referral_no_email') {
+        toast.success('Paciente remitido con éxito')
+      } else if (sent) {
         toast.success('Compartición creada. Se envió enlace y código OTP por correo')
       } else {
         toast.success('Compartición creada. No se pudo enviar correo, revisa configuración MAIL_*')
@@ -429,7 +442,7 @@ export function ClinicalSharingPage() {
                         <td className="px-3 py-2">{`${item.doctor_target_nombres || ''} ${item.doctor_target_apellidos || ''}`.trim()}</td>
                         <td className="px-3 py-2">
                           <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-semibold ${statusBadgeClass(status)}`}>
-                            {status}
+                            {statusLabel(status)}
                           </span>
                         </td>
                         <td className="px-3 py-2">{formatDateTime(item.access_expires_at || item.invitation_expires_at)}</td>
